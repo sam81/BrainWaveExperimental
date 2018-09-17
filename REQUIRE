@@ -1,0 +1,5 @@
+BrainWave
+Compat 0.7.18
+DataFrames
+DocStringExtensions 
+julia 0.5
