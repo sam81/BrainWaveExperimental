@@ -24,6 +24,7 @@ $(SIGNATURES)
 ##### Examples
 
 ```julia
+    using BrainWave
     sampRate = 256; nTaps=64; minLat=0.5; maxLat=2.5
     rec, evtTab = simulateRecording(nChans=1, dur=4, sampRate=sampRate)
     filterContinuous!(rec, sampRate, "lowpass", nTaps, [2], channels=[1], transitionWidth=0.2)
@@ -42,9 +43,9 @@ $(SIGNATURES)
 ```
 
 """
-function selectLargestPeakInWindow{T<:Real, P<:Real, S<:Real}(sig::Union{AbstractMatrix{T}, AbstractVector{T}}, peakPnts::AbstractVector{P}, peakTimes::AbstractVector{S}, minLat::Real, maxLat::Real)
+function selectLargestPeakInWindow(sig::Union{AbstractMatrix{T}, AbstractVector{T}}, peakPnts::AbstractVector{P}, peakTimes::AbstractVector{S}, minLat::Real, maxLat::Real) where {T<:Real, P<:Real, S<:Real}
 
-    peakCandidates = find((peakTimes .<= maxLat ) .& (peakTimes .>= minLat))
+    peakCandidates = findall((peakTimes .<= maxLat ) .& (peakTimes .>= minLat))
     nCandidates = length(peakCandidates)
     if nCandidates == 0
         peakPnt = missing
@@ -53,7 +54,7 @@ function selectLargestPeakInWindow{T<:Real, P<:Real, S<:Real}(sig::Union{Abstrac
         peakPnt = peakPnts[peakCandidates[1]]
         peakTime = peakTimes[peakCandidates[1]]
     else
-        idx = find(sig[peakPnts[peakCandidates]] .== maximum(sig[peakPnts[peakCandidates]]))[1]
+        idx = findall(sig[peakPnts[peakCandidates]] .== maximum(sig[peakPnts[peakCandidates]]))[1]
         peakPnt = peakPnts[peakCandidates[idx]]
         peakTime = peakTimes[peakCandidates[idx]]
     end
@@ -104,11 +105,11 @@ $(SIGNATURES)
 ```
 
 """
-function selectLargestTroughInWindow{T<:Real, P<:Real, S<:Real}(sig::Union{AbstractMatrix{T}, AbstractVector{T}}, troughPnts::AbstractVector{P}, troughTimes::AbstractVector{S}, minLat::Real, maxLat::Real, maxAmp::Real=Inf)
+function selectLargestTroughInWindow(sig::Union{AbstractMatrix{T}, AbstractVector{T}}, troughPnts::AbstractVector{P}, troughTimes::AbstractVector{S}, minLat::Real, maxLat::Real, maxAmp::Real=Inf) where {T<:Real, P<:Real, S<:Real}
 
-    troughCandidates = find((troughTimes .<= maxLat ) .& (troughTimes .>= minLat))
+    troughCandidates = findall((troughTimes .<= maxLat ) .& (troughTimes .>= minLat))
     #make sure trough amplitude is smaller than peak amplitude
-    troughCandidates = troughCandidates[find(sig[troughPnts[troughCandidates]] .< maxAmp)]
+    troughCandidates = troughCandidates[findall(sig[troughPnts[troughCandidates]] .< maxAmp)]
     nCandidates = length(troughCandidates)
     if nCandidates == 0
         troughPnt = missing
@@ -117,7 +118,7 @@ function selectLargestTroughInWindow{T<:Real, P<:Real, S<:Real}(sig::Union{Abstr
         troughPnt = troughPnts[troughCandidates[1]]
         troughTime = troughTimes[troughCandidates[1]]
     else
-        idx = find(sig[troughPnts[troughCandidates]] .== minimum(sig[troughPnts[troughCandidates]]))[1]
+        idx = findall(sig[troughPnts[troughCandidates]] .== minimum(sig[troughPnts[troughCandidates]]))[1]
         troughPnt = troughPnts[troughCandidates[idx]]
         troughTime = troughTimes[troughCandidates[idx]]
     end
@@ -170,12 +171,12 @@ $(SIGNATURES)
 ```
 
 """
-function selectStrongestInflectionInWindow{T<:Real, Q<:Real, P<:Real, S<:Real}(sig::Union{AbstractMatrix{T}, AbstractVector{T}}, dy::Union{AbstractMatrix{Q}, AbstractVector{Q}}, inflPnts::AbstractVector{P}, inflTimes::AbstractVector{S}, minLat::Real, maxLat::Real; maxAmp::Real=Inf)
+function selectStrongestInflectionInWindow(sig::Union{AbstractMatrix{T}, AbstractVector{T}}, dy::Union{AbstractMatrix{Q}, AbstractVector{Q}}, inflPnts::AbstractVector{P}, inflTimes::AbstractVector{S}, minLat::Real, maxLat::Real; maxAmp::Real=Inf) where {T<:Real, Q<:Real, P<:Real, S<:Real}
 
 
-    inflectionCandidates = find((inflTimes .<= maxLat ) .& (inflTimes .>= minLat))
+    inflectionCandidates = findall((inflTimes .<= maxLat ) .& (inflTimes .>= minLat))
     #make sure inflection amplitude is smaller than peak amplitude
-    inflectionCandidates = inflectionCandidates[find(sig[inflPnts[inflectionCandidates]] .< maxAmp)]
+    inflectionCandidates = inflectionCandidates[findall(sig[inflPnts[inflectionCandidates]] .< maxAmp)]
     nCandidates = length(inflectionCandidates)
     if nCandidates == 0
         inflectionPnt = missing
@@ -187,7 +188,7 @@ function selectStrongestInflectionInWindow{T<:Real, Q<:Real, P<:Real, S<:Real}(s
         #strategy 1: find the minimum of signal (useful as surrogate of finding troughs)
         #idx = find(sig[inflPnts[inflectionCandidates]] .== minimum(sig[inflPnts[inflectionCandidates]]))[1]
         # strategy 2: find point at which first derivative is closer to zero (closer to a trough)
-        idx = find(abs.(dy[inflPnts[inflectionCandidates]]) .== minimum(abs.(dy[inflPnts[inflectionCandidates]])))[1]
+        idx = findall(abs.(dy[inflPnts[inflectionCandidates]]) .== minimum(abs.(dy[inflPnts[inflectionCandidates]])))[1]
         inflectionPnt = inflPnts[inflectionCandidates[idx]]
         inflectionTime = inflTimes[inflectionCandidates[idx]]
     end
@@ -243,7 +244,7 @@ A dataframe with the following columns:
 ```
 
 """
-function findABRWaves{T<:Real}(sig::Union{AbstractMatrix{T}, AbstractVector{T}}, stimLevel::Real, sampRate::Real; epochStart::Real=0, waveVLatencyOffset::Real=0, dBRef::String="SPL")
+function findABRWaves(sig::Union{AbstractMatrix{T}, AbstractVector{T}}, stimLevel::Real, sampRate::Real; epochStart::Real=0, waveVLatencyOffset::Real=0, dBRef::String="SPL") where {T<:Real}
     sig = vec(sig)
     if dBRef == "SPL"
         stimLevel = stimLevel - 31

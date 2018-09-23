@@ -20,7 +20,7 @@ function calcDelayedPeakPoints(sig, pkTimes, delay, sampRate; epochStart=0)
         peakVPnts = xpksPnts[(xpksTimes .>= minPeakVLat) .& (xpksTimes .<= maxPeakVLat)]
         if length(peakVTimes) > 0
             ## find largest peak
-            idx = find(sig[peakVPnts] .== maximum(sig[peakVPnts]))[1]
+            idx = findall(sig[peakVPnts] .== maximum(sig[peakVPnts]))[1]
             peakVTime = peakVTimes[idx]
             peakVDelay = peakVTime - pkTimes[5] 
             ## recompute delay on the basis of peak V delay
@@ -40,7 +40,7 @@ function calcDelayedPeakPoints(sig, pkTimes, delay, sampRate; epochStart=0)
       
         if length(fooTimes) > 0
             #find largest peak
-            idx = find(sig[fooPnts] .== maximum(sig[fooPnts]))[1]
+            idx = findall(sig[fooPnts] .== maximum(sig[fooPnts]))[1]
             peakTimes[pk] = fooTimes[idx]
             peakPoints[pk] = fooPnts[idx]
         else
@@ -79,7 +79,7 @@ function calcDelayedPeakPoints(sig, pkTimes, delay, sampRate; epochStart=0)
             
         if length(fooTimes) > 0
             #find largest trough
-            idx = find(sig[fooPnts] .== minimum(sig[fooPnts]))[1]
+            idx = findall(sig[fooPnts] .== minimum(sig[fooPnts]))[1]
             troughTimes[pk] = fooTimes[idx]
             troughPoints[pk] = fooPnts[idx]
         else
@@ -111,8 +111,8 @@ function calcDelayedPeakPoints(sig, pkTimes, delay, sampRate; epochStart=0)
 
     waveLabels = ["I", "II", "III", "IV", "V"]
     df = DataFrame(wave=waveLabels, peakPoint=peakPoints, troughPoint=troughPoints, peakLatency=peakLatencies, troughLatency=troughLatencies, peakAmp=peakAmps, troughAmp=troughAmps, peakTroughAmp=peakTroughAmps,
-                   minPeakLat=vcat(pkTimes[1:4]+delay[1], minPeakVLat),
-                   maxPeakLat=vcat(pkTimes[1:4]+delay[2], maxPeakVLat),
+                   minPeakLat=vcat(pkTimes[1:4].+delay[1], minPeakVLat),
+                   maxPeakLat=vcat(pkTimes[1:4].+delay[2], maxPeakVLat),
                    minTroughLat=minTroughLat,
                    maxTroughLat=maxTroughLat)
     
@@ -148,7 +148,7 @@ $(SIGNATURES)
 ```
 
 """
-function calcPeaksFromExpectedLatencies{T<:Real, S<:Real, P<:Real, Q<:Real, G<:Real, H<:Real}(sig::Union{AbstractMatrix{T}, AbstractVector{T}}, expPeakLatencies::Union{AbstractVector{S}, AbstractVector{Union{S, Missing}}}, winStart::AbstractVector{P}, winStop::AbstractVector{Q}, sampRate::Real; epochStart::Real=0, minPeakTroughLat::AbstractVector{G}=[0.25, 0.12, 0.25, 0.12, 0.25]./1000, maxPeakTroughLat::AbstractVector{H}=[1, 1, 1, 0.75, 2]./1000, waveLabels::AbstractVector{String} = ["I", "II", "III", "IV", "V"])
+function calcPeaksFromExpectedLatencies(sig::Union{AbstractMatrix{T}, AbstractVector{T}}, expPeakLatencies::Union{AbstractVector{S}, AbstractVector{Union{S, Missing}}}, winStart::AbstractVector{P}, winStop::AbstractVector{Q}, sampRate::Real; epochStart::Real=0, minPeakTroughLat::AbstractVector{G}=[0.25, 0.12, 0.25, 0.12, 0.25]./1000, maxPeakTroughLat::AbstractVector{H}=[1, 1, 1, 0.75, 2]./1000, waveLabels::AbstractVector{String} = ["I", "II", "III", "IV", "V"]) where {T<:Real, S<:Real, P<:Real, Q<:Real, G<:Real, H<:Real}
     nPeaks = length(expPeakLatencies)
     xpksPnts, xpksTimes = findPeaks(sig, sampRate, epochStart=epochStart) #find all peaks in the waveform
     xtrsPnts, xtrsTimes = findTroughs(sig, sampRate, epochStart=epochStart) #find all troughs in the waveform
@@ -169,7 +169,7 @@ function calcPeaksFromExpectedLatencies{T<:Real, S<:Real, P<:Real, Q<:Real, G<:R
         end
         if length(candidateTimes) > 0
             #find largest peak
-            idx = find(sig[candidatePnts] .== maximum(sig[candidatePnts]))[1]
+            idx = findall(sig[candidatePnts] .== maximum(sig[candidatePnts]))[1]
             peakLatencies[pk] = candidateTimes[idx]
             peakPoints[pk] = candidatePnts[idx]
             peakLatenciesEst[pk] = candidateTimes[idx]
@@ -225,7 +225,7 @@ function calcPeaksFromExpectedLatencies{T<:Real, S<:Real, P<:Real, Q<:Real, G<:R
         
         if length(candidateTimes) > 0
             #find largest trough
-            idx = find(sig[candidatePnts] .== minimum(sig[candidatePnts]))[1]
+            idx = findall(sig[candidatePnts] .== minimum(sig[candidatePnts]))[1]
             troughLatencies[pk] = candidateTimes[idx]
             troughPoints[pk] = candidatePnts[idx]
             troughLatenciesEst[pk] = candidateTimes[idx]
@@ -370,7 +370,7 @@ $(SIGNATURES)
 ```
 
 """
-function calcPeaksTroughsInflFromExpectedLatencies{T<:Real, S<:Real, P<:Real, Q<:Real, G<:Real, H<:Real}(sig::Union{AbstractMatrix{T}, AbstractVector{T}}, expPeakLatencies::Union{AbstractVector{S}, AbstractVector{Union{S, Missing}}}, winStart::AbstractVector{P}, winStop::AbstractVector{Q}, sampRate::Real; epochStart::Real=0, minPeakTroughLat::AbstractVector{G}=[0.25, 0.12, 0.25, 0.12, 0.25]./1000, maxPeakTroughLat::AbstractVector{H}=[1, 1, 1, 0.75, 2]./1000, waveLabels::AbstractVector{String} = ["I", "II", "III", "IV", "V"])
+function calcPeaksTroughsInflFromExpectedLatencies(sig::Union{AbstractMatrix{T}, AbstractVector{T}}, expPeakLatencies::Union{AbstractVector{S}, AbstractVector{Union{S, Missing}}}, winStart::AbstractVector{P}, winStop::AbstractVector{Q}, sampRate::Real; epochStart::Real=0, minPeakTroughLat::AbstractVector{G}=[0.25, 0.12, 0.25, 0.12, 0.25]./1000, maxPeakTroughLat::AbstractVector{H}=[1, 1, 1, 0.75, 2]./1000, waveLabels::AbstractVector{String} = ["I", "II", "III", "IV", "V"]) where {T<:Real, S<:Real, P<:Real, Q<:Real, G<:Real, H<:Real}
     nPeaks = length(expPeakLatencies)
     xpksPnts, xpksTimes = findPeaks(sig, sampRate, epochStart=epochStart) #find all peaks in the waveform
     xtrsPnts, xtrsTimes = findTroughs(sig, sampRate, epochStart=epochStart) #find all troughs in the waveform
@@ -392,7 +392,7 @@ function calcPeaksTroughsInflFromExpectedLatencies{T<:Real, S<:Real, P<:Real, Q<
         end
         if length(candidateTimes) > 0
             #find largest peak
-            idx = find(sig[candidatePnts] .== maximum(sig[candidatePnts]))[1]
+            idx = findall(sig[candidatePnts] .== maximum(sig[candidatePnts]))[1]
             peakLatencies[pk] = candidateTimes[idx]
             peakPoints[pk] = candidatePnts[idx]
             peakLatenciesEst[pk] = candidateTimes[idx]
@@ -445,7 +445,7 @@ function calcPeaksTroughsInflFromExpectedLatencies{T<:Real, S<:Real, P<:Real, Q<
             candidatePnts = xtrsPnts[(xtrsTimes.>= peakLatencies[pk]+thisMin) .& (xtrsTimes.<= peakLatencies[pk]+thisMax)]
             if length(candidateTimes) > 0
                 #find largest trough
-                idx = find(sig[candidatePnts] .== minimum(sig[candidatePnts]))[1]
+                idx = findall(sig[candidatePnts] .== minimum(sig[candidatePnts]))[1]
                 troughLatencies[pk] = candidateTimes[idx]
                 troughPoints[pk] = candidatePnts[idx]
                 troughLatenciesEst[pk] = candidateTimes[idx]
@@ -457,7 +457,7 @@ function calcPeaksTroughsInflFromExpectedLatencies{T<:Real, S<:Real, P<:Real, Q<
             candidateTimes = xinflTimes[(xinflTimes .>= peakLatencies[pk]+thisMin) .& (xinflTimes .<= peakLatencies[pk]+thisMax)]
             candidatePnts = xinflPnts[(xinflTimes.>=peakLatencies[pk]+thisMin) .& (xinflTimes.<=peakLatencies[pk]+thisMax)]
             if length(candidateTimes) > 0
-                idx = find(abs.(dy[candidatePnts-1]) .== minimum(abs.(dy[candidatePnts-1])))[1] #choose point where first derivative is closest to zero
+                idx = findall(abs.(dy[candidatePnts .- 1]) .== minimum(abs.(dy[candidatePnts .- 1])))[1] #choose point where first derivative is closest to zero
                 troughLatencies[pk] = candidateTimes[idx]
                 troughPoints[pk] = candidatePnts[idx]
                 troughLatenciesEst[pk] = candidateTimes[idx]
@@ -578,7 +578,7 @@ end
 
 
 
-function calcPeaksInflFromExpectedLatencies{T<:Real, S<:Real, P<:Real, Q<:Real, G<:Real, H<:Real}(sig::Union{AbstractMatrix{T}, AbstractVector{T}}, expPeakLatencies::Union{AbstractVector{S}, AbstractVector{Union{S, Missing}}}, winStart::AbstractVector{P}, winStop::AbstractVector{Q}, sampRate::Real; epochStart::Real=0, minPeakTroughLat::AbstractVector{G}=[0.25, 0.12, 0.25, 0.12, 0.25]./1000, maxPeakTroughLat::AbstractVector{H}=[1, 1, 1, 0.75, 2]./1000, waveLabels::AbstractVector{String} = ["I", "II", "III", "IV", "V"])
+function calcPeaksInflFromExpectedLatencies(sig::Union{AbstractMatrix{T}, AbstractVector{T}}, expPeakLatencies::Union{AbstractVector{S}, AbstractVector{Union{S, Missing}}}, winStart::AbstractVector{P}, winStop::AbstractVector{Q}, sampRate::Real; epochStart::Real=0, minPeakTroughLat::AbstractVector{G}=[0.25, 0.12, 0.25, 0.12, 0.25]./1000, maxPeakTroughLat::AbstractVector{H}=[1, 1, 1, 0.75, 2]./1000, waveLabels::AbstractVector{String} = ["I", "II", "III", "IV", "V"]) where {T<:Real, S<:Real, P<:Real, Q<:Real, G<:Real, H<:Real}
     nPeaks = length(expPeakLatencies)
     xpksPnts, xpksTimes = findPeaks(sig, sampRate, epochStart=epochStart) #find all peaks in the waveform
     xtrsPnts, xtrsTimes = findTroughs(sig, sampRate, epochStart=epochStart) #find all troughs in the waveform
@@ -600,7 +600,7 @@ function calcPeaksInflFromExpectedLatencies{T<:Real, S<:Real, P<:Real, Q<:Real, 
         end
         if length(candidateTimes) > 0
             #find largest peak
-            idx = find(sig[candidatePnts] .== maximum(sig[candidatePnts]))[1]
+            idx = findall(sig[candidatePnts] .== maximum(sig[candidatePnts]))[1]
             peakLatencies[pk] = candidateTimes[idx]
             peakPoints[pk] = candidatePnts[idx]
             peakLatenciesEst[pk] = candidateTimes[idx]
@@ -616,7 +616,7 @@ function calcPeaksInflFromExpectedLatencies{T<:Real, S<:Real, P<:Real, Q<:Real, 
             end
             if length(candidateTimes) > 0
                 #find largest peak
-                idx = find(sig[candidatePnts] .== maximum(sig[candidatePnts]))[1]
+                idx = findall(sig[candidatePnts] .== maximum(sig[candidatePnts]))[1]
                 peakLatencies[pk] = candidateTimes[idx]
                 peakPoints[pk] = candidatePnts[idx]
                 peakLatenciesEst[pk] = candidateTimes[idx]
@@ -671,7 +671,7 @@ function calcPeaksInflFromExpectedLatencies{T<:Real, S<:Real, P<:Real, Q<:Real, 
         end
         if length(candidateTimes) > 0
             #find largest trough
-            idx = find(sig[candidatePnts] .== minimum(sig[candidatePnts]))[1]
+            idx = findall(sig[candidatePnts] .== minimum(sig[candidatePnts]))[1]
             troughLatencies[pk] = candidateTimes[idx]
             troughPoints[pk] = candidatePnts[idx]
             troughLatenciesEst[pk] = candidateTimes[idx]
@@ -760,7 +760,7 @@ end
 ##         fooPnts = xpksPnts[(xpksTimes.>=pkTimes[pk]+delay[1]) .& (xpksTimes.<=pkTimes[pk]+delay[2])]
 ##         if length(fooTimes) > 0
 ##             #find largest peak
-##             idx = find(sig[fooPnts] .== maximum(sig[fooPnts]))[1]
+##             idx = findall(sig[fooPnts] .== maximum(sig[fooPnts]))[1]
 ##             push!(peakTimes, fooTimes[idx])
 ##             push!(peakPoints, fooPnts[idx])
 ##         else
@@ -788,7 +788,7 @@ end
 ##         fooPnts = xtrsPnts[(xtrsTimes.>= peakTimes[pk]+thisMin) .& (xtrsTimes.<= peakTimes[pk]+thisMax)]
 ##         if length(fooTimes) > 0
 ##             #find largest trough
-##             idx = find(sig[fooPnts] .== minimum(sig[fooPnts]))[1]
+##             idx = findall(sig[fooPnts] .== minimum(sig[fooPnts]))[1]
 ##             push!(troughTimes, fooTimes[idx])
 ##             push!(troughPoints, fooPnts[idx])
 ##         else
