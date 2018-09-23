@@ -1,0 +1,30 @@
+language: julia
+os:
+    - linux
+    - osx
+julia:
+    - 1.0
+    - nightly
+notifications:
+    email: false
+
+sudo: true
+
+matrix:
+  allow_failures:
+    - julia: nightly
+
+addons:
+  apt:
+    packages:
+      - python3-matplotlib
+      - python3-scipy
+env:
+  matrix:
+    - PYTHON=python3 # python 3.5
+script:
+  - if [[ -a .git/shallow ]]; then git fetch --unshallow; fi
+  - julia --check-bounds=yes --color=yes -e 'using Pkg; ENV["PYTHON"]=""; Pkg.build("PyCall"); Pkg.add("Conda"); using Conda; Conda.add("scipy"); Pkg.test("BrainWaveExperimental", coverage=true);'
+after_success:
+  - julia -e 'using Pkg; cd(Pkg.dir("BrainWaveExperimental")); Pkg.add("Coverage"); using Coverage; Codecov.submit(Codecov.process_folder());'
+  - julia -e 'using Pkg; cd(Pkg.dir("BrainWaveExperimental")); Pkg.add("Coverage"); using Coverage; Coveralls.submit(Coveralls.process_folder());'
