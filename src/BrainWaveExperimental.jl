@@ -1,6 +1,8 @@
 module BrainWaveExperimental 
 
-export calcDelayedPeakPoints, calcPeaksFromExpectedLatencies, calcPeaksInflFromExpectedLatencies, calcPeaksTroughsInflFromExpectedLatencies, findABRWaves, selectLargestPeakInWindow, selectLargestTroughInWindow, selectStrongestInflectionInWindow
+export calcDelayedPeakPoints, calcPeaksFromExpectedLatencies, calcPeaksInflFromExpectedLatencies, calcPeaksInflFromExpectedLatencies2, calcPeaksInflFromExpectedLatencies3, calcPeaksTroughsInflFromExpectedLatencies,
+findABRWaves, findInflectionsDown, findInflectionsUp,
+selectLargestPeakInWindow, selectLargestTroughInWindow, selectStrongestInflectionInWindow
 
 using BrainWave, DataFrames, DocStringExtensions
 
