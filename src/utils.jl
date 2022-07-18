@@ -453,6 +453,7 @@ function calcPeaksTroughsInflFromExpectedLatencies(sig::Union{AbstractMatrix{T},
         minTroughLatEst[pk]= peakLatenciesEst[pk]+thisMin
         maxTroughLatEst[pk] =  peakLatenciesEst[pk]+thisMax
 
+        ## peak exists, try to find relative minimum
         candidateTimes = (Float64)[]
         candidatePnts = (Int)[]
         if ismissing(peakLatencies[pk]) == false
@@ -467,7 +468,7 @@ function calcPeaksTroughsInflFromExpectedLatencies(sig::Union{AbstractMatrix{T},
                 troughPointsEst[pk] = candidatePnts[idx]
             end
         end
-
+        ## peak exists, relative minimum can't be found try to find inflection point
         if (ismissing(troughPoints[pk]) == true) & (ismissing(peakLatencies[pk]) == false) #try inflection points
             candidateTimes = xinflTimes[(xinflTimes .>= peakLatencies[pk]+thisMin) .& (xinflTimes .<= peakLatencies[pk]+thisMax)]
             candidatePnts = xinflPnts[(xinflTimes.>=peakLatencies[pk]+thisMin) .& (xinflTimes.<=peakLatencies[pk]+thisMax)]
@@ -480,6 +481,52 @@ function calcPeaksTroughsInflFromExpectedLatencies(sig::Union{AbstractMatrix{T},
             end
         end
 
+        ## peak exists, relative minimum and inflection point can't be found, select absolute minimum
+        if (ismissing(troughPoints[pk]) == true) & (ismissing(peakLatencies[pk]) == false)
+            idxStart = round(Int, (minTroughLat[pk]-epochStart)*sampRate)+1;
+            idxStop = round(Int, (maxTroughLat[pk]-epochStart)*sampRate)+1;
+            idx = findfirst(sig[idxStart:idxStop] .== minimum(sig[idxStart:idxStop])) + idxStart-1
+            troughPoints[pk] = idx
+            troughLatencies[pk] = ((idx-1)/sampRate)+epochStart
+            troughPointsEst[pk] = idx
+            troughLatenciesEst[pk] = ((idx-1)/sampRate)+epochStart
+        end
+
+        
+        ## peak does not exist, use peakPointEst as a reference, try to find relative minimum
+         if ismissing(troughPointsEst[pk]) == true
+            if ismissing(expPeakLatencies[pk]) == false
+                candidateTimes = xtrsTimes[(xtrsTimes .>= peakLatenciesEst[pk]+thisMin) .& (xtrsTimes .<= peakLatenciesEst[pk]+thisMax)]
+                candidatePnts = xtrsPnts[(xtrsTimes.>= peakLatenciesEst[pk]+thisMin) .& (xtrsTimes.<= peakLatenciesEst[pk]+thisMax)]
+                if length(candidateTimes) > 0
+                    #find largest trough
+                    idx = findall(sig[candidatePnts] .== minimum(sig[candidatePnts]))[1]
+                    troughLatenciesEst[pk] = candidateTimes[idx]
+                    troughPointsEst[pk] = candidatePnts[idx]
+                end
+            else
+                troughLatenciesEst[pk] = missing
+                troughPointsEst[pk] = missing
+            end
+         end
+
+        ## peak does not exist, relative minimum can't be found try to find inflection point
+        if ismissing(troughPointsEst[pk]) == true
+            if ismissing(expPeakLatencies[pk]) == false
+                candidateTimes = xinflTimes[(xinflTimes .>= peakLatenciesEst[pk]+thisMin) .& (xinflTimes .<= peakLatenciesEst[pk]+thisMax)]
+                candidatePnts = xinflPnts[(xinflTimes.>=peakLatenciesEst[pk]+thisMin) .& (xinflTimes.<=peakLatenciesEst[pk]+thisMax)]
+                if length(candidateTimes) > 0
+                    idx = findall(abs.(dy[candidatePnts .- 1]) .== minimum(abs.(dy[candidatePnts .- 1])))[1] #choose point where first derivative is closest to zero
+                    troughLatenciesEst[pk] = candidateTimes[idx]
+                    troughPointsEst[pk] = candidatePnts[idx]
+                end
+            else
+                troughLatenciesEst[pk] = missing
+                troughPointsEst[pk] = missing
+            end
+        end
+
+        ## peak does not exist, relative minimum and inflection point can't be found, select absolute minimum
         if ismissing(troughPointsEst[pk]) == true
             if ismissing(expPeakLatencies[pk]) == false
                 idxStart = round(Int, (minTroughLatEst[pk]-epochStart)*sampRate)+1;
